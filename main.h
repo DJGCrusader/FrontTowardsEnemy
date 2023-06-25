@@ -1,6 +1,5 @@
 /*
 Header file for Fair and Balanced main.cpp
-Test
 */
 
 #include "mbed.h"
