@@ -1,5 +1,5 @@
 /*
-Header file for FrontTowardsEnemy main.cpp
+Header file for Fair and Balanced main.cpp
 */
 
 #include "mbed.h"
@@ -25,11 +25,12 @@ Header file for FrontTowardsEnemy main.cpp
 //#define IMU_SCL D7
 
 //L432KC
-#define DRIVE0  D3
-#define DRIVE1  D5
-#define DRIVE2  D6
+#define DRIVE0  D5
+#define DRIVE1  D6
+
 #define WEAPON0 D9
-#define PPM_IN   D10
+
+#define PPM_IN  D10
 #define IMU_SDA D12
 #define IMU_SCL A6
 
@@ -58,12 +59,11 @@ Header file for FrontTowardsEnemy main.cpp
 #define GRAV 9.80665f
 
 //------------------    Implementation Constants
-#define FREQ 200
+#define FREQ 1000
 #define PERIOD (1.0f/FREQ)
 
-#define SERIAL_FREQ 20
+#define SERIAL_FREQ 100
 #define SERIAL_PERIOD (1.0f/SERIAL_FREQ)
-
 #define SERIAL_RATIO (FREQ/SERIAL_FREQ)
 
 #define W_MAX_DEG 1776.0f // in degrees/second
@@ -72,6 +72,7 @@ Header file for FrontTowardsEnemy main.cpp
 #define K_W 100.0f/W_MAX
 #define KI_W 100.0f
 #define W_INT_LIMIT 0.0f
+
 
 //Serial pcSerial(PC_10, PC_11);    // USE FOR LOGOMATIC! CANNOT USE USB+LOGO AT SAME TIME
 Serial pcSerial(USBTX, USBRX);
@@ -101,49 +102,17 @@ float rcCommandInputs[8] = {0,0,0,0,0,0,0,0};
 
 MPU6050 mpu(IMU_SDA,IMU_SCL);
 float gx, gy, gz, gx_z, gy_z, gz_z, ax, ay, az;
+double roll, pitch, yaw, rollDot, pitchDot, yawDot, gyro_comp, rollDesired, segCmd, kP, kD;
 double w_cmd;
 double w_int;
 
-//DigitalOut t1(D10);
-//InterruptIn e1(D8);
-//bool inInterrupt1 = 0;
-//bool pulse1 = 0;
-//void e1IntRise();
-//void e1IntFall();
-//int t_e1;
-//double d_e1;
-
 Servo drive0(DRIVE0);
 Servo drive1(DRIVE1);
-Servo drive2(DRIVE2);
 Servo weapon(WEAPON0);
-double driveCmds[3] = {0,0,0};
-
-float eulerTimeAvg;
-double pitchAvg;
-double rollAvg;
-double yawAvg;
-double rollDotAvg;
-double pitchDotAvg;
-double yawDotAvg;
-double accXAvg;
-double accYAvg;
-double accZAvg;
+double driveCmds[2] = {0,0};
 
 double Tx;
 double Ty;
-
-int state = 0;
-double jumpScale = 0.0;
-double jumpTime = 0;
-double parabola_dt = 0;
-double vTakeoff = 0;
-double speed = 0;
-double l_leg = 0.5; //meters
-double prevPos = 0;
-double vCalc = 0;
-double prevPos1 = 0;
-double vCalc1 = 0;
 
 int enabled;
 
