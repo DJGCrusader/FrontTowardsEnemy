@@ -1,11 +1,11 @@
 /*
-Front Towards Enemy
-December 2022
+Front Toward Enemy
+2023
 
 Authors: 
-Dr. Daniel J. Gonzalez - dgonzrobotics@gmail.com
+Daniel J. Gonzalez - dgonzrobotics@gmail.com
 
-Design for NucleoL432KC
+Designed for NucleoL432KC
 */
 #include "main.h"
 
@@ -21,6 +21,15 @@ void setupServo() {
 }
 
 void setupIMU() {
+    
+    roll = 0;
+    pitch = 0; 
+    yaw = 0;
+    rollDot = 0; 
+    pitchDot = 0;
+    yawDot = 0;
+    gyro_comp = 0.8;
+
     if(mpu.getID()==0x68) {
          pcSerial.printf("MPU6050 OK\n");
          wait(1);
@@ -79,12 +88,6 @@ void setup(){
     dt = t - tPrev;
     pcSerial.printf("Timer Set Up\n"); 
     
-    
-    //Set up distance sensors
-//    t1.write(0);
-//    e1.rise(&e1IntRise);
-//    e1.fall(&e1IntFall);
-    
     enabled = 1;
 }
 
@@ -130,7 +133,6 @@ void getRCInputs(){
             }
         }
     }
-    jumpScale = rcCommandInputs[5];
 }
 
 void scaleSkidSteer(int arrayLen){
@@ -172,13 +174,14 @@ void loop(){
 
         if(IMUCounter == 0){
             if(mpu.read(&gx,&gy,&gz,&ax,&ay,&az)){ // Get IMU readings, zero them. Raw is [dps, G]
+                //Zero-ing
                 gx -= gx_z;
                 gy -= gy_z;
                 gz -= gz_z;
-                gx *= PI/180.0f; // radians/second
+                gx *= PI/180.0f; // convert to radians/second
                 gy *= PI/180.0f;
                 gz *= PI/180.0f;
-                ax *= GRAV; // meters/second
+                ax *= GRAV; // meters/second/second
                 ay *= GRAV;
                 az *= GRAV;
             }else{
@@ -186,8 +189,11 @@ void loop(){
                 mpu.start();
                 IMUCounter = 1;
             }
+            roll = (roll + gx*dt);
+            pitch = (pitch + gy*dt);
+            yaw = (yaw + gz*dt);
         }else{
-            IMUCounter++;
+            IMUCounter++; // This is in case the IMU fails, it restarts it
             if(IMUCounter == 100){
                     IMUCounter = 0;
                 }
@@ -249,36 +255,14 @@ void loop(){
 //                pcSerial.printf("b%f\n",dt-PERIOD); //(dt-PERIOD)
                 badTime = 0;
             }
-//            pcSerial.printf("%f, %f, %f, %f, %f, %f, %f, %f\r\n", rcCommandInputsRaw[0], rcCommandInputsRaw[1], rcCommandInputsRaw[2], rcCommandInputsRaw[3], rcCommandInputsRaw[4], rcCommandInputsRaw[5], rcCommandInputsRaw[6], rcCommandInputsRaw[7]);
-//            pcSerial.printf("%.4f,%.4f,%.4f,%.2f,%.2f,%.2f, %.1f\r\n",gx,gy,gz,ax,ay,az, w_cmd);
-//            pcSerial.printf("%.4f,%.4f,%.4f,%.4f\r\n", -0.5*rcCommandInputs[1],gz, w_cmd, w_int);
-//            pcSerial.printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n", rcCommandInputs[0], rcCommandInputs[1], rcCommandInputs[2], rcCommandInputs[3], rcCommandInputs[4], rcCommandInputs[5], rcCommandInputs[6], rcCommandInputs[7]);
-//            pcSerial.printf("%i %.2f %.2f %.1f %.2f %.3f\n",state, l_states.h1.p*RAD2DEG, l_states.h1.v, l_states.h1.t, jumpScale, parabola_dt);
-//            pcSerial.printf("%i %.3f %.3f\n",state, l_controls.h1.t_ff, l_states.h1.t);
 
-//            pcSerial.printf("%6f %6f %6f\n",l_states.h1.v, vCalc, vCalc1); //Velocity Tuning
-
-//            pcSerial.printf("%.3f %i %.3f %.3f %.1f %.3f %.1f\n",t, state, l_states.h1.p, l_states.h1.v, l_states.h1.t, l_controls.h1.p_des, l_controls.h1.t_ff);
-//            pcSerial.printf("%.3f %.3f\n",l_states.h1.t,l_controls.h1.t_ff);
-
-//            pcSerial.printf("%i %i %i%.3f %.1f %.3f %.3f %.1f %.1f %.3f\n", state, (int)rcCommandInputs[6], (int)rcCommandInputs[7], rcCommandInputs[5], l_controls.h1.p_des*RAD2DEG, l_controls.h1.t_ff, l_controls.h1.kp, l_states.h1.p*RAD2DEG, l_states.h1.v*RAD2DEG, l_states.h1.t);
-//            pcSerial.printf("%f, %f, %f, %f, %f, %f, %f, %f, %f, \n", rcCommandInputs[0], rcCommandInputs[1], rcCommandInputs[3], rcCommandInputs[4], rcCommandInputs[5], odrvCmds[0], odrvCmds[1], odrvCmds[2], odrvCmds[3]);
-//            pcSerial.printf("%f, %f, %f, \n", roll, pitch, yaw);
-//            pcSerial.printf("%f, %f, %f, ", rollDot, pitchDot, yawDot);
-//            pcSerial.printf("%f, %f, %f, %f, %f, %f, %f, %f, %i\n",
-//                            accX, accY, accZ, accXAvg, accYAvg, accZAvg,
-//                            sqrt(accX*accX + accY*accY + accZ*accZ), sqrt(accXAvg*accXAvg + accYAvg*accYAvg + accZAvg*accZAvg), state);
-//            pcSerial.printf("%f, %f, %f, \n", roll, pitch, yaw);
-            
-
-//            pcSerial.printf("%f, %f, ", roll, pitch);
-//            pcSerial.printf("%f, %f, ", rollDot, pitchDot);
-//            pcSerial.printf("%f, %f, %f, %f ", odrvCmds[0], odrvCmds[1], odrvCmds[2], odrvCmds[3]);
-//            pcSerial.printf("%f, %i \n", sqrt(accX*accX + accY*accY + accZ*accZ), state);
-            
-//            pcSerial.printf("%f, %f, %f, %f, %f, %f, %f, %f, %i\n",
-//                            accX, accY, accZ, accXAvg, accYAvg, accZAvg,
-//                            sqrt(accX*accX + accY*accY + accZ*accZ), sqrt(accXAvg*accXAvg + accYAvg*accYAvg + accZAvg*accZAvg), state);
+        //    pcSerial.printf("%f, %f, %f, %f, %f, %f, %f, %f\r\n", rcCommandInputsRaw[0], rcCommandInputsRaw[1], rcCommandInputsRaw[2], rcCommandInputsRaw[3], rcCommandInputsRaw[4], rcCommandInputsRaw[5], rcCommandInputsRaw[6], rcCommandInputsRaw[7]);
+        //    pcSerial.printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n", rcCommandInputs[0], rcCommandInputs[1], rcCommandInputs[2], rcCommandInputs[3], rcCommandInputs[4], rcCommandInputs[5], rcCommandInputs[6], rcCommandInputs[7]);
+        //    pcSerial.printf("%.4f,%.4f,%.4f,%.2f,%.2f,%.2f, %.1f\r\n",gx,gy,gz,ax,ay,az, w_cmd);
+        //    pcSerial.printf("%.4f,%.4f,%.4f,%.4f\r\n", -0.5*rcCommandInputs[1],gz, w_cmd, w_int);
+           pcSerial.printf("%f, %f, %f, \n", roll, pitch, yaw);
+        //    pcSerial.printf("%f, %f, %f, ", rollDot, pitchDot, yawDot);
+        //    pcSerial.printf("%f, %f, %f, %f, %f, %f, %f, %f, %i\n", ax, ay, az, sqrt(ax*ax + ay*ay + az*az));
         }
     }
 }

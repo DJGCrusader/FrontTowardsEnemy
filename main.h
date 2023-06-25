@@ -58,12 +58,11 @@ Header file for FrontTowardsEnemy main.cpp
 #define GRAV 9.80665f
 
 //------------------    Implementation Constants
-#define FREQ 200
+#define FREQ 1000
 #define PERIOD (1.0f/FREQ)
 
-#define SERIAL_FREQ 20
+#define SERIAL_FREQ 100
 #define SERIAL_PERIOD (1.0f/SERIAL_FREQ)
-
 #define SERIAL_RATIO (FREQ/SERIAL_FREQ)
 
 #define W_MAX_DEG 1776.0f // in degrees/second
@@ -101,6 +100,7 @@ float rcCommandInputs[8] = {0,0,0,0,0,0,0,0};
 
 MPU6050 mpu(IMU_SDA,IMU_SCL);
 float gx, gy, gz, gx_z, gy_z, gz_z, ax, ay, az;
+double roll, pitch, yaw, rollDot, pitchDot, yawDot, gyro_comp;
 double w_cmd;
 double w_int;
 
@@ -119,31 +119,8 @@ Servo drive2(DRIVE2);
 Servo weapon(WEAPON0);
 double driveCmds[3] = {0,0,0};
 
-float eulerTimeAvg;
-double pitchAvg;
-double rollAvg;
-double yawAvg;
-double rollDotAvg;
-double pitchDotAvg;
-double yawDotAvg;
-double accXAvg;
-double accYAvg;
-double accZAvg;
-
 double Tx;
 double Ty;
-
-int state = 0;
-double jumpScale = 0.0;
-double jumpTime = 0;
-double parabola_dt = 0;
-double vTakeoff = 0;
-double speed = 0;
-double l_leg = 0.5; //meters
-double prevPos = 0;
-double vCalc = 0;
-double prevPos1 = 0;
-double vCalc1 = 0;
 
 int enabled;
 
