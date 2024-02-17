@@ -43,7 +43,7 @@ https://os.mbed.com/teams/TVZ-Mechatronics-Team/code/HCSR04/#cf3e4e307d15
 #define RRL_MIN     -1
 #define RRL_MAX     112
 
-#define DEADBAND    10 //Percent
+#define DEADBAND    5 //Percent
 
 #define CONTROL_MODE 1
 //0 means don't do anything (Debug Mode)
@@ -67,8 +67,7 @@ https://os.mbed.com/teams/TVZ-Mechatronics-Team/code/HCSR04/#cf3e4e307d15
 #define SERIAL_PERIOD (1.0f/SERIAL_FREQ)
 #define SERIAL_RATIO (FREQ/SERIAL_FREQ)
 
-#define W_MAX_DEG 1776.0f // in degrees/second
-#define W_MAX 30.739f // in rad/s
+#define W_MAX 53.198f //34.9f //30.739f // in rad/s
 
 #define K_W 100.0f/W_MAX
 #define KI_W 100.0f
@@ -82,6 +81,7 @@ bool isRunning = 1;
 long teleCounter = 0;
 long loopCounter = 0;
 int IMUCounter = 0;
+
 
 Timer timer;
 double t = 0; 
@@ -101,10 +101,11 @@ float rcCommandInputsRaw[8] = {0,0,0,0,0,0,0,0};
 float rcCommandInputs[8] = {0,0,0,0,0,0,0,0};
 
 MPU6050 mpu(IMU_SDA,IMU_SCL);
-float gx, gy, gz, gx_z, gy_z, gz_z, ax, ay, az;
+float gx, gy, gz, gx_z, gy_z, gz_z, ax, ay, az, gy_prev;
 double roll, pitch, yaw, rollDot, pitchDot, yawDot, gyro_comp;
 double w_cmd;
 double w_int;
+double weaponComp = 0;
 
 //DigitalOut t1(D10);
 //InterruptIn e1(D8);
@@ -120,6 +121,7 @@ Servo drive1(DRIVE1);
 Servo drive2(DRIVE2);
 Servo weapon(WEAPON0);
 double driveCmds[3] = {0,0,0};
+double weaponCmd = 0.0;
 
 double Tx;
 double Ty;

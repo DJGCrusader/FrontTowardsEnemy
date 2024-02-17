@@ -8,11 +8,12 @@ Daniel J. Gonzalez - dgonzrobotics@gmail.com
 Designed for NucleoL432KC
 */
 #include "main.h"
+#include <cstdlib>
 
 using namespace FastMath;
 
 void setupServo() {
-    float myRange = .000675;
+    float myRange = .000500; //0.000675
     float myDegrees = 90;
     drive0.calibrate(myRange, myDegrees);
     drive1.calibrate(myRange, myDegrees);
@@ -66,13 +67,6 @@ void setup(){
     
     pcSerial.baud(115200);
     pcSerial.printf("----------- Start! -----------\n");
-    //------------------------------    Servo Out
-    setupServo();  
-    drive0.write(0.5);
-    drive1.write(0.5);
-    drive2.write(0.5);
-    weapon.write(0.0);
-    pcSerial.printf("Servos Set Up\n");
     
     //Create instance of PPM class
     //Pass in interrupt pin, minimum output value, maximum output value, minimum pulse time from transmitter, maximum pulse time from transmitter, number of channels, throttle channel (used for failsafe)
@@ -80,6 +74,14 @@ void setup(){
     pcSerial.printf("PPM Set Up\n");
     setupIMU();
     pcSerial.printf("IMU Set Up\n");
+
+    //------------------------------    Servo Out
+    setupServo();  
+    drive0.write(0.5);
+    drive1.write(0.5);
+    drive2.write(0.5);
+    weapon.write(0.0);
+    pcSerial.printf("Servos Set Up\n");
     
     //set up timer
     timer.start();
@@ -94,7 +96,6 @@ void setup(){
 int main() {
     setup();
     pcSerial.printf("----------- Loop Start! -----------\n");
-    wait(0.5);
     while(isRunning){
         loop();
     }
@@ -184,20 +185,22 @@ void loop(){
                 ax *= GRAV; // meters/second/second
                 ay *= GRAV;
                 az *= GRAV;
+
+                // if(gy == gy_prev){
+                //     pcSerial.printf("IMU Failure %X\n", mpu.getID());
+                //     IMUCounter = 1;
+                // }
             }else{
-                pcSerial.printf("IMU Failure %X", mpu.getID());
-                mpu.start();
+                pcSerial.printf("IMU Failure %X\n", mpu.getID());
                 IMUCounter = 1;
             }
             roll = (roll + gx*dt);
             pitch = (pitch + gy*dt);
             yaw = (yaw + gz*dt);
         }else{
-            IMUCounter++; // This is in case the IMU fails, it restarts it
-            if(IMUCounter == 100){
-                    IMUCounter = 0;
-                }
-            }
+            mpu.start();
+            IMUCounter = 0;
+        }
         
         
         if(CONTROL_MODE == 0){ //Do nothing (Debug Mode)
@@ -206,6 +209,7 @@ void loop(){
             drive0.write(0.5);
             drive1.write(0.5);
             drive2.write(0.5);
+            weapon.write(0.0);
         }else if(CONTROL_MODE==1){ //FPS Controls + Weapon
             //             0    1    2    3     4     5           6              7
             // Channels: LUD, RRL, RUD, LRL, Pot1, Pot2, LeftSwitch, Right trigger
@@ -221,14 +225,29 @@ void loop(){
 //            if (w_int > W_INT_LIMIT) w_int = W_INT_LIMIT;
 //            if (w_int < -W_INT_LIMIT) w_int = -W_INT_LIMIT;
             
-            w_cmd = -0.25*rcCommandInputs[1] + 2.0f*K_W*(-0.25*rcCommandInputs[1]/(K_W) - gz); // + 0.0f*w_int;
+            // w_cmd = -0.5*rcCommandInputs[1] - 2.0f*K_W*(0.5*rcCommandInputs[1]/(K_W) - gy); // + 0.0f*w_int;
+
+            w_cmd = -0.5*rcCommandInputs[1] - 0.5*K_W*(rcCommandInputs[1]/(K_W) - gy); // + 0.0f*w_int;
+            w_cmd = 0.5*w_cmd; //Limit the turn rate in proportion to the UDLR commands
+
 //            w_cmd *= rcCommandInputs[5];
             
             
-            //----    Drive Out
+            //----    Drive Out [-100 to 100]
             driveCmds[0] = w_cmd - (COS60)*rcCommandInputs[3] + 1.0f*rcCommandInputs[0]; // LRL+LUD
             driveCmds[1] = w_cmd - (COS60)*rcCommandInputs[3] - 1.0f*rcCommandInputs[0]; //COS30
-            driveCmds[2] = w_cmd + rcCommandInputs[3]         + 0.0f*rcCommandInputs[0];
+            driveCmds[2] = w_cmd +         rcCommandInputs[3] + 0.0f*rcCommandInputs[0];
+
+            //----    Weapon out [0 to 1]
+            weaponComp = 0.0;
+            if(fabs(gy)>2.285){ //2.285 is the max allowable turn rate without decelerating the weapon at all
+                weaponComp = (fabs(gy) - 2.285)/(0.3*34.9 - 2.285); 
+                //34.9 rad/s is max measurable gyro rate 
+                //0.3 is the scaling for when to kick in full weaponComp
+                //gz when flat, gz when up on side
+                if (weaponComp>0.666) weaponComp = 0.666; //limit weapon compensation
+            }
+            weaponCmd = rcCommandInputs[6]*(0.333+0.666*rcCommandInputs[4] - weaponComp); 
             
             //Skid Steer Scaling
             scaleSkidSteer(3);
@@ -238,13 +257,15 @@ void loop(){
 //                driveCmds[i]*=rcCommandInputs[4];
 //            }
             
-            drive0.write(map(-driveCmds[0],-100,100,1,0));
-            drive1.write(map(-driveCmds[1],-100,100,1,0));
-            drive2.write(map(driveCmds[2],-100,100,1,0));
-            weapon.write(rcCommandInputs[4]);
+            drive0.write(map(driveCmds[0],-100,100,0,1));
+            drive1.write(map(driveCmds[1],-100,100,0,1));
+            drive2.write(map(driveCmds[2],-100,100,0,1));
+            weapon.write(map(weaponCmd, 0, 1, 0.5, 0)); //Unidirectional for QWINOUT, bidirectional for BotBitz
+            //weapon.write(map(weaponCmd, 0, 1, 0.5, 1.0)); //Unidirectional for QWINOUT, bidirectional for BotBitz
             
         }
         loopCounter = 0;
+        gy_prev = gy;
     }
     if((t-tPrevSerial)>= SERIAL_PERIOD){
 
@@ -258,9 +279,11 @@ void loop(){
 
         //    pcSerial.printf("%f, %f, %f, %f, %f, %f, %f, %f\r\n", rcCommandInputsRaw[0], rcCommandInputsRaw[1], rcCommandInputsRaw[2], rcCommandInputsRaw[3], rcCommandInputsRaw[4], rcCommandInputsRaw[5], rcCommandInputsRaw[6], rcCommandInputsRaw[7]);
         //    pcSerial.printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n", rcCommandInputs[0], rcCommandInputs[1], rcCommandInputs[2], rcCommandInputs[3], rcCommandInputs[4], rcCommandInputs[5], rcCommandInputs[6], rcCommandInputs[7]);
-        //    pcSerial.printf("%.4f,%.4f,%.4f,%.2f,%.2f,%.2f, %.1f\r\n",gx,gy,gz,ax,ay,az, w_cmd);
+        //    pcSerial.printf("%.3f, %.3f, %.3f, %.3f\r\n", map(rcCommandInputs[4], 0, 1, 0.5, 1),  map(-driveCmds[0],-100,100,1,0), map(-driveCmds[1],-100,100,1,0), map(-driveCmds[2],-100,100,1,0));
+        //    pcSerial.printf("%.4f,%.4f,%.4f,%.2f,%.2f,%.2f, %.1f, %.3f\r\n",gx,gy,gz,ax,ay,az, w_cmd, 100*weaponComp);
+        pcSerial.printf("%.1f, %.3f\r\n",w_cmd, 100*weaponComp);
         //    pcSerial.printf("%.4f,%.4f,%.4f,%.4f\r\n", -0.5*rcCommandInputs[1],gz, w_cmd, w_int);
-           pcSerial.printf("%f, %f, %f, \n", roll, pitch, yaw);
+        //    pcSerial.printf("%f, %f, %f, \n", roll, pitch, yaw);
         //    pcSerial.printf("%f, %f, %f, ", rollDot, pitchDot, yawDot);
         //    pcSerial.printf("%f, %f, %f, %f, %f, %f, %f, %f, %i\n", ax, ay, az, sqrt(ax*ax + ay*ay + az*az));
         }
