@@ -38,7 +38,11 @@ void setupIMU() {
          pcSerial.printf("MPU6050 error ID=0x%x\r\n",mpu.getID());
      }
      mpu.start();
-     pcSerial.printf("Zeroing in 3...");
+     pcSerial.printf("Zeroing in 5...");
+     wait(1);
+     pcSerial.printf("4...");
+     wait(1);
+     pcSerial.printf("3...");
      wait(1);
      pcSerial.printf("2...");
      wait(1);
@@ -224,13 +228,14 @@ void loop(){
             //Limit the integrator.
 //            if (w_int > W_INT_LIMIT) w_int = W_INT_LIMIT;
 //            if (w_int < -W_INT_LIMIT) w_int = -W_INT_LIMIT;
-            
-            // w_cmd = -0.5*rcCommandInputs[1] - 2.0f*K_W*(0.5*rcCommandInputs[1]/(K_W) - gy); // + 0.0f*w_int;
 
-            w_cmd = -0.5*rcCommandInputs[1] - 0.5*K_W*(rcCommandInputs[1]/(K_W) - gy); // + 0.0f*w_int;
-            w_cmd = 0.5*w_cmd; //Limit the turn rate in proportion to the UDLR commands
+            w_cmd = -0.25*rcCommandInputs[1] - KP_W*K_W*(0.25*rcCommandInputs[1]/(K_W) - gy); // + 0.0f*w_int;
 
-//            w_cmd *= rcCommandInputs[5];
+            //Failsafe for controller instability
+            if(rcCommandInputs[5] == 0.0f || rcCommandInputs[1] == 0.0f){
+                w_cmd = 0.0f;
+            }
+
             
             
             //----    Drive Out [-100 to 100]
