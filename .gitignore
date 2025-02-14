@@ -4,7 +4,12 @@ mbed
 ?clangd
 compile_commands?json
 ?mbed
-Servo
-PPM
-MPU6050
-HCSR04
+# Servo
+# PPM
+# MPU6050
+# HCSR04
+.build
+.mbed
+projectfiles
+*.py*
+BUILD

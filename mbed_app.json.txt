@@ -1,7 +1,0 @@
-//{
-//    "target_overrides": {
-//        "*": {
-//            "device_has_remove": ["USBDEVICE"]
-//        }
-//    }
-//}

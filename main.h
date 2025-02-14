@@ -76,7 +76,7 @@ https://os.mbed.com/teams/TVZ-Mechatronics-Team/code/HCSR04/#cf3e4e307d15
 #define W_INT_LIMIT 0.0f
 
 //Serial pcSerial(PC_10, PC_11);    // USE FOR LOGOMATIC! CANNOT USE USB+LOGO AT SAME TIME
-Serial pcSerial(USBTX, USBRX);
+BufferedSerial pcSerial(USBTX, USBRX);
 
 
 bool isRunning = 1;

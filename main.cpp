@@ -32,29 +32,35 @@ void setupIMU() {
     gyro_comp = 0.8;
 
     if(mpu.getID()==0x68) {
-         pcSerial.printf("MPU6050 OK\n");
-         wait(1);
+        printf("MPU6050 OK\n");
+        //  wait(1);
+        ThisThread::sleep_for(1s);
      } else {
-         pcSerial.printf("MPU6050 error ID=0x%x\r\n",mpu.getID());
+        printf("MPU6050 error ID=0x%x\r\n",mpu.getID());
      }
      mpu.start();
-     pcSerial.printf("Zeroing in 5...");
-     wait(1);
-     pcSerial.printf("4...");
-     wait(1);
-     pcSerial.printf("3...");
-     wait(1);
-     pcSerial.printf("2...");
-     wait(1);
-     pcSerial.printf("1...");
-     wait(1);
-     pcSerial.printf("Go!\n");
+     printf("Zeroing in 5...");
+     //  wait(1);
+     ThisThread::sleep_for(1s);
+     printf("4...");
+    //  wait(1);
+     ThisThread::sleep_for(1s);
+     printf("3...");
+    //  wait(1);
+     ThisThread::sleep_for(1s);
+     printf("2...");
+    //  wait(1);
+     ThisThread::sleep_for(1s);
+     printf("1...");
+    //  wait(1);
+     ThisThread::sleep_for(1s);
+     printf("Go!\n");
      gx_z = 0;
      gy_z = 0;
      gz_z = 0;
      for(int i = 0; i<100; i++){
          mpu.read(&gx,&gy,&gz,&ax,&ay,&az);
-         wait(0.01);
+         ThisThread::sleep_for(10ms);
          gx_z += gx;
          gy_z += gy;
          gz_z += gz;
@@ -62,22 +68,21 @@ void setupIMU() {
      gx_z /= 100.0f;
      gy_z /= 100.0f;
      gz_z /= 100.0f;
-     pcSerial.printf("Zeroing Complete.\n");
+     printf("Zeroing Complete.\n");
 }
 
 
 
 void setup(){
-    
-    pcSerial.baud(115200);
-    pcSerial.printf("----------- Start! -----------\n");
+    pcSerial.set_baud(115200);
+    printf("----------- Start! -----------\n");
     
     //Create instance of PPM class
     //Pass in interrupt pin, minimum output value, maximum output value, minimum pulse time from transmitter, maximum pulse time from transmitter, number of channels, throttle channel (used for failsafe)
     ppmInputs = new PPM(PPMinterruptPin, 0, 1, 1000, 1900, 8, 3);
-    pcSerial.printf("PPM Set Up\n");
+    printf("PPM Set Up\n");
     setupIMU();
-    pcSerial.printf("IMU Set Up\n");
+    printf("IMU Set Up\n");
 
     //------------------------------    Servo Out
     setupServo();  
@@ -85,21 +90,21 @@ void setup(){
     drive1.write(0.5);
     drive2.write(0.5);
     weapon.write(0.0);
-    pcSerial.printf("Servos Set Up\n");
+    printf("Servos Set Up\n");
     
     //set up timer
     timer.start();
     tPrev = timer.read_us()/1000000.0;
     t = timer.read_us()/1000000.0;
     dt = t - tPrev;
-    pcSerial.printf("Timer Set Up\n"); 
+    printf("Timer Set Up\n"); 
     
     enabled = 1;
 }
 
 int main() {
     setup();
-    pcSerial.printf("----------- Loop Start! -----------\n");
+    printf("----------- Loop Start! -----------\n");
     while(isRunning){
         loop();
     }
@@ -191,11 +196,11 @@ void loop(){
                 az *= GRAV;
 
                 // if(gy == gy_prev){
-                //     pcSerial.printf("IMU Failure %X\n", mpu.getID());
+                //     printf("IMU Failure %X\n", mpu.getID());
                 //     IMUCounter = 1;
                 // }
             }else{
-                pcSerial.printf("IMU Failure %X\n", mpu.getID());
+                printf("IMU Failure %X\n", mpu.getID());
                 IMUCounter = 1;
             }
             roll = (roll + gx*dt);
@@ -278,19 +283,19 @@ void loop(){
         tPrevSerial = t;
         if(USESERIAL and !inInt and enabled==1){
             if(badTime){
-//                pcSerial.printf("b%f\n",dt-PERIOD); //(dt-PERIOD)
+//                printf("b%f\n",dt-PERIOD); //(dt-PERIOD)
                 badTime = 0;
             }
 
-        //    pcSerial.printf("%f, %f, %f, %f, %f, %f, %f, %f\r\n", rcCommandInputsRaw[0], rcCommandInputsRaw[1], rcCommandInputsRaw[2], rcCommandInputsRaw[3], rcCommandInputsRaw[4], rcCommandInputsRaw[5], rcCommandInputsRaw[6], rcCommandInputsRaw[7]);
-        //    pcSerial.printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n", rcCommandInputs[0], rcCommandInputs[1], rcCommandInputs[2], rcCommandInputs[3], rcCommandInputs[4], rcCommandInputs[5], rcCommandInputs[6], rcCommandInputs[7]);
-        //    pcSerial.printf("%.3f, %.3f, %.3f, %.3f\r\n", map(rcCommandInputs[4], 0, 1, 0.5, 1),  map(-driveCmds[0],-100,100,1,0), map(-driveCmds[1],-100,100,1,0), map(-driveCmds[2],-100,100,1,0));
-        //    pcSerial.printf("%.4f,%.4f,%.4f,%.2f,%.2f,%.2f, %.1f, %.3f\r\n",gx,gy,gz,ax,ay,az, w_cmd, 100*weaponComp);
-        pcSerial.printf("%.1f, %.3f\r\n",w_cmd, 100*weaponComp);
-        //    pcSerial.printf("%.4f,%.4f,%.4f,%.4f\r\n", -0.5*rcCommandInputs[1],gz, w_cmd, w_int);
-        //    pcSerial.printf("%f, %f, %f, \n", roll, pitch, yaw);
-        //    pcSerial.printf("%f, %f, %f, ", rollDot, pitchDot, yawDot);
-        //    pcSerial.printf("%f, %f, %f, %f, %f, %f, %f, %f, %i\n", ax, ay, az, sqrt(ax*ax + ay*ay + az*az));
+        //    printf("%f, %f, %f, %f, %f, %f, %f, %f\r\n", rcCommandInputsRaw[0], rcCommandInputsRaw[1], rcCommandInputsRaw[2], rcCommandInputsRaw[3], rcCommandInputsRaw[4], rcCommandInputsRaw[5], rcCommandInputsRaw[6], rcCommandInputsRaw[7]);
+        //    printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n", rcCommandInputs[0], rcCommandInputs[1], rcCommandInputs[2], rcCommandInputs[3], rcCommandInputs[4], rcCommandInputs[5], rcCommandInputs[6], rcCommandInputs[7]);
+        //    printf("%.3f, %.3f, %.3f, %.3f\r\n", map(rcCommandInputs[4], 0, 1, 0.5, 1),  map(-driveCmds[0],-100,100,1,0), map(-driveCmds[1],-100,100,1,0), map(-driveCmds[2],-100,100,1,0));
+        //    printf("%.4f,%.4f,%.4f,%.2f,%.2f,%.2f, %.1f, %.3f\r\n",gx,gy,gz,ax,ay,az, w_cmd, 100*weaponComp);
+        printf("%.1f, %.3f\r\n",w_cmd, 100*weaponComp);
+        //    printf("%.4f,%.4f,%.4f,%.4f\r\n", -0.5*rcCommandInputs[1],gz, w_cmd, w_int);
+        //    printf("%f, %f, %f, \n", roll, pitch, yaw);
+        //    printf("%f, %f, %f, ", rollDot, pitchDot, yawDot);
+        //    printf("%f, %f, %f, %f, %f, %f, %f, %f, %i\n", ax, ay, az, sqrt(ax*ax + ay*ay + az*az));
         }
     }
 }
