@@ -71,8 +71,6 @@ void setupIMU() {
      printf("Zeroing Complete.\n");
 }
 
-
-
 void setup(){
     pcSerial.set_baud(115200);
     printf("----------- Start! -----------\n");
@@ -223,7 +221,7 @@ void loop(){
             //             0    1    2    3     4     5           6              7
             // Channels: LUD, RRL, RUD, LRL, Pot1, Pot2, LeftSwitch, Right trigger
             
-            //Pre Scaling with Potentiometer
+            //Pre Scaling of sticks with Potentiometer
             for(int i=0; i<4; i++){
                 rcCommandInputs[i]*=rcCommandInputs[5];
             }
@@ -234,15 +232,13 @@ void loop(){
 //            if (w_int > W_INT_LIMIT) w_int = W_INT_LIMIT;
 //            if (w_int < -W_INT_LIMIT) w_int = -W_INT_LIMIT;
 
-            w_cmd = -0.25*rcCommandInputs[1] - KP_W*K_W*(0.25*rcCommandInputs[1]/(K_W) - gy); // + 0.0f*w_int;
+            w_cmd = -0.375*rcCommandInputs[1] - KP_W*K_W*(0.125*rcCommandInputs[1]/(K_W) - gy); // + 0.0f*w_int;
 
             //Failsafe for controller instability
-            if(rcCommandInputs[5] == 0.0f || rcCommandInputs[1] == 0.0f){
-                w_cmd = 0.0f;
+            if((rcCommandInputs[5]< 0.1f) || (rcCommandInputs[1] < 10.0f && rcCommandInputs[1] > -10.0f)){
+                w_cmd = -0.375*rcCommandInputs[1];
             }
 
-            
-            
             //----    Drive Out [-100 to 100]
             driveCmds[0] = w_cmd - (COS60)*rcCommandInputs[3] + 1.0f*rcCommandInputs[0]; // LRL+LUD
             driveCmds[1] = w_cmd - (COS60)*rcCommandInputs[3] - 1.0f*rcCommandInputs[0]; //COS30
@@ -266,7 +262,6 @@ void loop(){
 //            for(int i=0; i<3; i++){
 //                driveCmds[i]*=rcCommandInputs[4];
 //            }
-            
             drive0.write(map(driveCmds[0],-100,100,0,1));
             drive1.write(map(driveCmds[1],-100,100,0,1));
             drive2.write(map(driveCmds[2],-100,100,0,1));
@@ -291,7 +286,7 @@ void loop(){
         //    printf("%.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f, %.2f\r\n", rcCommandInputs[0], rcCommandInputs[1], rcCommandInputs[2], rcCommandInputs[3], rcCommandInputs[4], rcCommandInputs[5], rcCommandInputs[6], rcCommandInputs[7]);
         //    printf("%.3f, %.3f, %.3f, %.3f\r\n", map(rcCommandInputs[4], 0, 1, 0.5, 1),  map(-driveCmds[0],-100,100,1,0), map(-driveCmds[1],-100,100,1,0), map(-driveCmds[2],-100,100,1,0));
         //    printf("%.4f,%.4f,%.4f,%.2f,%.2f,%.2f, %.1f, %.3f\r\n",gx,gy,gz,ax,ay,az, w_cmd, 100*weaponComp);
-        printf("%.1f, %.3f\r\n",w_cmd, 100*weaponComp);
+        printf("%.1f, %.3f, %.3f, %.3f\r\n",w_cmd, 100*weaponComp, weaponCmd, w_cmd);
         //    printf("%.4f,%.4f,%.4f,%.4f\r\n", -0.5*rcCommandInputs[1],gz, w_cmd, w_int);
         //    printf("%f, %f, %f, \n", roll, pitch, yaw);
         //    printf("%f, %f, %f, ", rollDot, pitchDot, yawDot);
@@ -299,19 +294,3 @@ void loop(){
         }
     }
 }
-
-//void e1IntRise(){
-//    t_e1 = timer.read_us();
-//    inInterrupt1 = 1;
-//}
-//
-//void e1IntFall(){
-//    int pulseWidth = (timer.read_us() - t_e1);
-//    
-//    if( pulseWidth < 23200){ // If within reasonable range
-//        d_e1 = pulseWidth / 5800.0f; // meters
-//    }
-//    
-//    inInterrupt1 = 0;
-//    pulse1 = 0;
-//}

@@ -51,7 +51,6 @@ https://os.mbed.com/teams/TVZ-Mechatronics-Team/code/HCSR04/#cf3e4e307d15
                         
 //------------------    Mathematical Constants
 #define DEG2ENC 16384.0f/360.0f
-//#define PI 3.14159265359
 #define ENC2DEG 360.0f/16384.0f
 #define DEG2RAD ((2.0f*PI)/360.0f)
 #define RAD2DEG (1/(DEG2RAD))
@@ -67,17 +66,16 @@ https://os.mbed.com/teams/TVZ-Mechatronics-Team/code/HCSR04/#cf3e4e307d15
 #define SERIAL_PERIOD (1.0f/SERIAL_FREQ)
 #define SERIAL_RATIO (FREQ/SERIAL_FREQ)
 
-#define W_MAX (53.198f) //Maximum Body rotational rate [in rad/s] at full throttle based on geometry, Motor KV, etc.
-//53.198f //34.9f //30.739f // in rad/s
+#define W_MAX (42.558f) //Maximum Body rotational rate [in rad/s] at full throttle based on geometry, Motor KV, etc.
+//53.198f for 16:1 //34.9f //30.739f // in rad/s
 
-#define KP_W 1.0 //proportional gain to turn rate controller
+#define KP_W 0.9 //proportional gain to turn rate controller
 #define K_W 100.0f/W_MAX
 #define KI_W 100.0f
 #define W_INT_LIMIT 0.0f
 
 //Serial pcSerial(PC_10, PC_11);    // USE FOR LOGOMATIC! CANNOT USE USB+LOGO AT SAME TIME
 BufferedSerial pcSerial(USBTX, USBRX);
-
 
 bool isRunning = 1;
 long teleCounter = 0;
